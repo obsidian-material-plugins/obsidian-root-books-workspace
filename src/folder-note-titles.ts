@@ -1,10 +1,15 @@
-import { Plugin, TFile, TFolder } from "obsidian";
+import { Plugin, TFile } from "obsidian";
 import { cachedFrontmatter, frontmatterRecord } from "./frontmatter";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
+import { needsInitialFolderTitle } from "./folder-note-title-policy";
 
 export class FolderNoteTitleSync {
 	private timers = new Map<string, number>();
 
-	constructor(private readonly plugin: Plugin) {}
+	constructor(
+		private readonly plugin: Plugin,
+		private readonly convention: FolderNoteConventionResolver,
+	) {}
 
 	start(): void {
 		this.plugin.registerEvent(
@@ -12,31 +17,10 @@ export class FolderNoteTitleSync {
 				if (item instanceof TFile) this.schedule(item);
 			}),
 		);
-		this.plugin.registerEvent(
-			this.plugin.app.vault.on("modify", (item) => {
-				if (item instanceof TFile) this.schedule(item);
-			}),
-		);
-		this.plugin.registerEvent(
-			this.plugin.app.vault.on("rename", (item) => {
-				if (item instanceof TFile) this.schedule(item);
-				if (item instanceof TFolder) {
-					const index = this.plugin.app.vault.getAbstractFileByPath(
-						`${item.path}/index.md`,
-					);
-					if (index instanceof TFile) this.schedule(index);
-				}
-			}),
-		);
-		for (const file of this.plugin.app.vault.getMarkdownFiles())
-			this.schedule(file);
 	}
 
 	private isFolderNote(file: TFile): boolean {
-		return (
-			file.name === "index.md" &&
-			Boolean(file.parent && !file.parent.isRoot())
-		);
+		return this.convention.isFolderNote(file);
 	}
 
 	private schedule(file: TFile): void {
@@ -55,13 +39,14 @@ export class FolderNoteTitleSync {
 	private async synchronize(file: TFile): Promise<void> {
 		if (!this.isFolderNote(file) || !file.parent) return;
 		const expected = file.parent.name;
-		const current = cachedFrontmatter(this.plugin.app, file).title;
-		if (current === expected) return;
+		if (!needsInitialFolderTitle(cachedFrontmatter(this.plugin.app, file)))
+			return;
 		await this.plugin.app.fileManager.processFrontMatter(
 			file,
 			(value: unknown) => {
 				const frontmatter = frontmatterRecord(value);
-				frontmatter.title = expected;
+				if (needsInitialFolderTitle(frontmatter))
+					frontmatter.title = expected;
 			},
 		);
 	}

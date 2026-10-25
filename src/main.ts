@@ -1,7 +1,16 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile, TFolder, normalizePath } from "obsidian";
 import { CreatedFromFilenameSync } from "./created-from-filename";
+import {
+	buildConventionManifest,
+	readConventionManifest,
+	saveConventionManifest,
+} from "./convention-manifest";
 import { BookDecorations } from "./decorations";
 import { FolderNoteTitleSync } from "./folder-note-titles";
+import {
+	FolderNoteConventionResolver,
+	normalizeNoteBasename,
+} from "./folder-note-convention";
 import {
 	auditWatchTargets,
 	exportCommunityInstallManagerProfile,
@@ -11,7 +20,11 @@ import {
 } from "./integrations";
 import { watchAuditIssueKeys } from "./integration-audit";
 import { NewNotePipeline } from "./new-note-pipeline";
+import { planNoteRenames } from "./note-rename-plan";
+import type { NoteRenamePlan } from "./note-rename-plan";
+import { normalizePropertyOrder } from "./property-organizer";
 import { RootBooksWorkspaceSettingTab } from "./settings";
+import { SettingsNoteOrganizer } from "./settings-note-organizer";
 import { SortingCoordinator } from "./sorting";
 import { DEFAULT_SETTINGS } from "./types";
 import type {
@@ -28,10 +41,16 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 	watchTargets: WatchedTarget[] = [];
 	watchProfileHasOverride = false;
 	private initialized = false;
+	readonly folderNoteConvention = new FolderNoteConventionResolver(
+		this.app,
+		this.settings,
+	);
 	private sorting: SortingCoordinator | null = null;
 	private pipeline: NewNotePipeline | null = null;
+	private createdFromFilename: CreatedFromFilenameSync | null = null;
 	private folderTitles: FolderNoteTitleSync | null = null;
 	private decorations: BookDecorations | null = null;
+	private noteOrganizer: SettingsNoteOrganizer | null = null;
 	private filenameDateSyncActive = false;
 	private watchProfileLoadError: string | null = null;
 	private previousWatchIssueKeys = new Set<string>();
@@ -39,6 +58,20 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
+		await this.folderNoteConvention.refreshDetection();
+		try {
+			let manifest = await readConventionManifest(this.app);
+			if (!manifest) {
+				const initial = this.folderNoteConvention.snapshot();
+				manifest = buildConventionManifest(initial);
+				await saveConventionManifest(this.app, initial);
+			}
+			this.folderNoteConvention.adopt(manifest);
+		} catch (error) {
+			new Notice(
+				`Could not publish the note convention: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
 		this.addSettingTab(new RootBooksWorkspaceSettingTab(this.app, this));
 		this.app.workspace.onLayoutReady(() => void this.initialize());
 	}
@@ -48,21 +81,45 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		this.initialized = true;
 
 		this.sorting = new SortingCoordinator(this);
-		this.pipeline = new NewNotePipeline(this, this.sorting);
-		this.folderTitles = new FolderNoteTitleSync(this);
-		this.decorations = new BookDecorations(this, this.settings);
-		registerUniqueNoteAction(this, this.settings, this.pipeline);
+		this.pipeline = new NewNotePipeline(
+			this,
+			this.sorting,
+			this.folderNoteConvention,
+		);
+		this.folderTitles = new FolderNoteTitleSync(
+			this,
+			this.folderNoteConvention,
+		);
+		this.decorations = new BookDecorations(
+			this,
+			this.settings,
+			this.folderNoteConvention,
+		);
+		registerUniqueNoteAction(
+			this,
+			this.settings,
+			this.pipeline,
+			this.folderNoteConvention,
+		);
 
 		await this.pipeline.start();
-		await new CreatedFromFilenameSync(
+		this.createdFromFilename = new CreatedFromFilenameSync(
 			this,
 			this.settings,
 			() => this.saveSettings(),
 			this.sorting,
-		).start();
+			this.folderNoteConvention,
+		);
+		await this.createdFromFilename.start();
 		this.filenameDateSyncActive = true;
 		this.folderTitles.start();
 		this.decorations.start();
+		this.noteOrganizer = new SettingsNoteOrganizer(
+			this,
+			this.folderNoteConvention,
+			this.settings,
+		);
+		this.noteOrganizer.start();
 
 		if (this.watchProfileLoadError)
 			new Notice(this.watchProfileLoadError, 10000);
@@ -86,6 +143,13 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		this.decorations?.refresh();
 	}
 
+	async refreshFolderNoteDetection(): Promise<void> {
+		await this.folderNoteConvention.refreshDetection();
+		await this.pipeline?.refreshConvention();
+		await this.createdFromFilename?.refreshConvention();
+		this.refreshDecorations();
+	}
+
 	openAppearancePicker(): void {
 		this.decorations?.openAppearancePicker();
 	}
@@ -103,6 +167,98 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+	}
+
+	async applyPropertySettings(): Promise<void> {
+		await this.saveSettings();
+		await this.noteOrganizer?.applyToAll();
+	}
+
+	async applyNoteConvention(
+		candidate: RootBooksWorkspaceSettings,
+		preview: NoteRenamePlan,
+	): Promise<void> {
+		const current = this.folderNoteConvention.snapshot();
+		const next = this.folderNoteConvention.preview(candidate);
+		const nextManifest = buildConventionManifest(next);
+		const files = this.app.vault.getAllLoadedFiles();
+		const plan = planNoteRenames(
+			files.map((file) => file.path),
+			files
+				.filter(
+					(file): file is TFolder =>
+						file instanceof TFolder && !file.isRoot(),
+				)
+				.map((folder) => ({ path: folder.path, name: folder.name })),
+			{
+				rootPath: current.rootPath,
+				localPattern: current.pattern,
+				extension: current.extension,
+			},
+			{
+				rootPath: next.rootPath,
+				localPattern: next.pattern,
+				extension: next.extension,
+			},
+		);
+		if (plan.conflicts.length > 0)
+			throw new Error(
+				`These destinations already exist: ${plan.conflicts.join(", ")}`,
+			);
+		if (JSON.stringify(plan) !== JSON.stringify(preview))
+			throw new Error(
+				"Settings notes changed since this preview. Review the filenames again before applying.",
+			);
+
+		const completed: typeof plan.renames = [];
+		const previous = { ...this.settings };
+		try {
+			for (const rename of plan.renames) {
+				const file = this.app.vault.getAbstractFileByPath(rename.from);
+				if (!(file instanceof TFile))
+					throw new Error(
+						`Settings note disappeared: ${rename.from}`,
+					);
+				await this.app.fileManager.renameFile(file, rename.to);
+				completed.push(rename);
+			}
+			Object.assign(this.settings, candidate);
+			await saveConventionManifest(this.app, next);
+			this.folderNoteConvention.adopt(nextManifest);
+			await this.saveSettings();
+			await this.refreshFolderNoteDetection();
+		} catch (error) {
+			Object.assign(this.settings, previous);
+			const rollbackErrors: string[] = [];
+			for (const rename of completed.reverse()) {
+				try {
+					const file = this.app.vault.getAbstractFileByPath(
+						rename.to,
+					);
+					if (!(file instanceof TFile))
+						throw new Error(`Missing ${rename.to}`);
+					await this.app.fileManager.renameFile(file, rename.from);
+				} catch (rollbackError) {
+					rollbackErrors.push(
+						rollbackError instanceof Error
+							? rollbackError.message
+							: String(rollbackError),
+					);
+				}
+			}
+			await saveConventionManifest(this.app, current).catch(
+				() => undefined,
+			);
+			this.folderNoteConvention.adopt(buildConventionManifest(current));
+			await this.saveSettings().catch(() => undefined);
+			const reason =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(
+				rollbackErrors.length
+					? `${reason}; rollback needs attention: ${rollbackErrors.join(", ")}`
+					: reason,
+			);
+		}
 	}
 
 	async saveWatchTargets(targets: readonly WatchedTarget[]): Promise<void> {
@@ -130,8 +286,8 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		const remainder = problems.length - 3;
 		new Notice(
 			live
-				? `Root Books Toolkit detected a watched-state change: ${names}${remainder > 0 ? ` and ${remainder} more` : ""} ${problems.length === 1 ? "needs" : "need"} attention. Open Toolkit settings for details.`
-				: `Root Books Toolkit found ${problems.length} watched target${problems.length === 1 ? "" : "s"} needing attention: ${names}${remainder > 0 ? ` and ${remainder} more` : ""}. Open Toolkit settings for details.`,
+				? `Obsidian to quartz workspace detected a watched-state change: ${names}${remainder > 0 ? ` and ${remainder} more` : ""} ${problems.length === 1 ? "needs" : "need"} attention. Open its settings for details.`
+				: `Obsidian to quartz workspace found ${problems.length} watched target${problems.length === 1 ? "" : "s"} needing attention: ${names}${remainder > 0 ? ` and ${remainder} more` : ""}. Open its settings for details.`,
 			10000,
 		);
 	}
@@ -180,10 +336,59 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 	}
 
 	private async loadSettings(): Promise<void> {
-		const stored =
+		let stored =
 			(await this.loadData()) as Partial<RootBooksWorkspaceSettings> | null;
-		this.settings = {
-			schemaVersion: 3,
+		let migratedLegacyData = false;
+		if (!stored) {
+			const previousPath = normalizePath(
+				`${this.app.vault.configDir}/plugins/root-books-workspace/data.json`,
+			);
+			if (await this.app.vault.adapter.exists(previousPath)) {
+				try {
+					stored = JSON.parse(
+						await this.app.vault.adapter.read(previousPath),
+					) as Partial<RootBooksWorkspaceSettings>;
+					migratedLegacyData = true;
+				} catch {
+					new Notice(
+						"The former plugin settings could not be read; default settings will be used.",
+					);
+				}
+			}
+		}
+		const namingMode = stored?.folderNoteNamingMode;
+		const storedRootName = normalizeNoteBasename(
+			stored?.rootWorkflowNoteName,
+			DEFAULT_SETTINGS.rootWorkflowNoteName,
+		);
+		const rootMode = stored?.rootNoteNamingMode;
+		this.settings = Object.assign(this.settings, {
+			schemaVersion: 6,
+			folderNoteNamingMode:
+				namingMode === "folder-notes" ||
+				namingMode === "index" ||
+				namingMode === "folder-name" ||
+				namingMode === "custom"
+					? namingMode
+					: DEFAULT_SETTINGS.folderNoteNamingMode,
+			customFolderNoteName: normalizeNoteBasename(
+				stored?.customFolderNoteName,
+				DEFAULT_SETTINGS.customFolderNoteName,
+			),
+			rootNoteNamingMode:
+				rootMode === "folder-notes" ||
+				rootMode === "index" ||
+				rootMode === "folder-name" ||
+				rootMode === "custom"
+					? rootMode
+					: storedRootName === "index"
+						? "index"
+						: "custom",
+			customRootNoteName: normalizeNoteBasename(
+				stored?.customRootNoteName,
+				storedRootName,
+			),
+			rootWorkflowNoteName: storedRootName,
 			lastValidDateFormat:
 				stored?.lastValidDateFormat ??
 				DEFAULT_SETTINGS.lastValidDateFormat,
@@ -199,11 +404,16 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 			exportWatchProfileOnStartup:
 				stored?.exportWatchProfileOnStartup ??
 				DEFAULT_SETTINGS.exportWatchProfileOnStartup,
-		};
+			propertyPosition:
+				stored?.propertyPosition === "top" ? "top" : "bottom",
+			propertyOrder: normalizePropertyOrder(stored?.propertyOrder),
+			completeGlobalProperties: stored?.completeGlobalProperties === true,
+		});
 		const profile = await loadWatchProfile(this.app);
 		this.watchTargets = profile.profile.targets;
 		this.watchProfileHasOverride = profile.hasOverride;
 		this.watchProfileLoadError = profile.error ?? null;
+		if (migratedLegacyData) await this.saveSettings();
 	}
 
 	onunload(): void {
@@ -211,5 +421,6 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		this.folderTitles?.dispose();
 		this.sorting?.dispose();
 		this.decorations?.dispose();
+		this.noteOrganizer?.dispose();
 	}
 }

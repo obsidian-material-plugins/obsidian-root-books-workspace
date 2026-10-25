@@ -7,6 +7,7 @@ import {
 	validateDateFormat,
 } from "./date-format";
 import { cachedFrontmatter, frontmatterRecord } from "./frontmatter";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
 import {
 	resolveDateManagerConfiguration,
 	splitFrontmatter,
@@ -36,6 +37,7 @@ export class CreatedFromFilenameSync {
 		private readonly settings: RootBooksWorkspaceSettings,
 		private readonly saveSettings: () => Promise<void>,
 		private readonly sorting: SortingCoordinator,
+		private readonly convention: FolderNoteConventionResolver,
 	) {}
 
 	async start(): Promise<void> {
@@ -69,10 +71,16 @@ export class CreatedFromFilenameSync {
 		);
 		this.plugin.registerEvent(
 			this.plugin.app.metadataCache.on("changed", (file) => {
-				if (file.path === "index.md") void this.onRootChanged();
+				if (this.convention.isRootWorkflowNote(file))
+					void this.onRootChanged();
 				else if (file.extension === "md") this.onMetadataChanged(file);
 			}),
 		);
+	}
+
+	async refreshConvention(): Promise<void> {
+		if (!this.rootFile()) return;
+		await this.onRootChanged();
 	}
 
 	private combinedFormat(dateFormat: string): string {
@@ -81,7 +89,9 @@ export class CreatedFromFilenameSync {
 	}
 
 	private rootFile(): TFile | null {
-		const root = this.plugin.app.vault.getAbstractFileByPath("index.md");
+		const root = this.plugin.app.vault.getAbstractFileByPath(
+			this.convention.rootPath(),
+		);
 		return root instanceof TFile ? root : null;
 	}
 
@@ -133,7 +143,7 @@ export class CreatedFromFilenameSync {
 		try {
 			for (const file of this.plugin.app.vault.getMarkdownFiles()) {
 				if (
-					file.path === "index.md" ||
+					this.convention.isRootWorkflowNote(file) ||
 					file.path.startsWith("templates/")
 				)
 					continue;
@@ -185,7 +195,10 @@ export class CreatedFromFilenameSync {
 		file: TFile,
 		dateFormat?: string,
 	): Promise<boolean> {
-		if (file.path === "index.md" || file.path.startsWith("templates/"))
+		if (
+			this.convention.isRootWorkflowNote(file) ||
+			file.path.startsWith("templates/")
+		)
 			return false;
 		const format = dateFormat ?? (await this.ensureRootFormat());
 		const parsed = extractDateFromFilename(

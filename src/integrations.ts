@@ -13,6 +13,7 @@ import {
 	buildCommunityManagerExport,
 	builtInWatchProfile,
 	WATCH_PROFILE_FILENAME,
+	LEGACY_WATCH_PROFILE_FILENAME,
 } from "./watch-profile";
 
 export interface InstalledTargetSummary {
@@ -35,6 +36,8 @@ interface CommunityPluginManager {
 	plugins?: Record<string, LoadedCompanion>;
 	enabledPlugins?: Set<string>;
 	manifests?: Record<string, PluginManifest>;
+	enablePlugin?: (id: string) => Promise<void>;
+	enablePluginAndSave?: (id: string) => Promise<void>;
 }
 
 interface CorePluginInstance {
@@ -55,6 +58,8 @@ interface CorePluginEntry {
 interface CorePluginManager {
 	plugins?: Record<string, CorePluginEntry>;
 	getPluginById?: (id: string) => CorePluginEntry | undefined;
+	enablePlugin?: (id: string) => Promise<void>;
+	enablePluginAndSave?: (id: string) => Promise<void>;
 }
 
 interface SettingsManager {
@@ -140,8 +145,17 @@ function profilePath(app: App): string {
 	return normalizePath(`${app.vault.configDir}/${WATCH_PROFILE_FILENAME}`);
 }
 
+function legacyProfilePath(app: App): string {
+	return normalizePath(
+		`${app.vault.configDir}/${LEGACY_WATCH_PROFILE_FILENAME}`,
+	);
+}
+
 export async function loadWatchProfile(app: App): Promise<ProfileLoadResult> {
-	const path = profilePath(app);
+	const preferredPath = profilePath(app);
+	const path = (await app.vault.adapter.exists(preferredPath))
+		? preferredPath
+		: legacyProfilePath(app);
 	if (await app.vault.adapter.exists(path)) {
 		try {
 			const parsed: unknown = JSON.parse(
@@ -156,7 +170,7 @@ export async function loadWatchProfile(app: App): Promise<ProfileLoadResult> {
 			return {
 				profile: builtInWatchProfile(),
 				hasOverride: false,
-				error: `Could not read ${WATCH_PROFILE_FILENAME}: ${error instanceof Error ? error.message : String(error)}`,
+				error: `Could not read ${path}: ${error instanceof Error ? error.message : String(error)}`,
 			};
 		}
 	}
@@ -176,12 +190,18 @@ export async function saveWatchProfile(
 		targets: normalizeWatchedTargets(targets),
 	};
 	await writeJson(app, profilePath(app), profile);
+	const legacy = legacyProfilePath(app);
+	if (await app.vault.adapter.exists(legacy))
+		await app.vault.adapter.remove(legacy);
 }
 
 export async function resetWatchProfile(app: App): Promise<WatchProfileFile> {
 	const path = profilePath(app);
 	if (await app.vault.adapter.exists(path))
 		await app.vault.adapter.remove(path);
+	const legacy = legacyProfilePath(app);
+	if (await app.vault.adapter.exists(legacy))
+		await app.vault.adapter.remove(legacy);
 	return builtInWatchProfile();
 }
 
@@ -587,7 +607,7 @@ function clickSettingsNavigation(app: App, label: string): boolean {
 	return true;
 }
 
-const TOOLKIT_SETTINGS_ID = "root-books-workspace";
+const TOOLKIT_SETTINGS_ID = "obsidian-to-quartz-workspace";
 const RETURN_SLIP_CLASS = "root-books-settings-return-slip";
 
 export function watchReturnAnchor(
@@ -680,10 +700,10 @@ async function installSettingsReturnSlip(
 	const slip = settingsDocument.body.createEl("button");
 	slip.type = "button";
 	slip.className = RETURN_SLIP_CLASS;
-	slip.textContent = "← Return to Root Books Toolkit";
+	slip.textContent = "← Return to Obsidian to quartz workspace";
 	slip.setAttribute(
 		"aria-label",
-		"Return to the same watched item in Root Books Toolkit",
+		"Return to the same watched item in Obsidian to quartz workspace",
 	);
 	const view = settingsDocument.defaultView;
 	let intervalId: number | undefined;
@@ -708,6 +728,36 @@ export function openCommunityPluginSettings(app: App): void {
 	const manager = settingsManager(app);
 	manager?.open?.();
 	manager?.openTabById?.("community-plugins");
+}
+
+export async function enableWatchedTarget(
+	app: App,
+	target: Pick<WatchedTarget, "kind" | "id">,
+): Promise<boolean> {
+	const manager =
+		target.kind === "community-plugin"
+			? communityManager(app)
+			: target.kind === "core-plugin"
+				? coreManager(app)
+				: undefined;
+	if (!manager) return false;
+	if (manager.enablePluginAndSave)
+		await manager.enablePluginAndSave(target.id);
+	else if (manager.enablePlugin) await manager.enablePlugin(target.id);
+	else return false;
+	return target.kind === "community-plugin"
+		? pluginEnabled(app, target.id)
+		: corePluginEnabled(app, target.id);
+}
+
+export function openCommunityPluginInstallPage(
+	app: App,
+	pluginId: string,
+	returnAnchor: string,
+): void {
+	if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(pluginId)) return;
+	window.open(`obsidian://show-plugin?id=${encodeURIComponent(pluginId)}`);
+	void installSettingsReturnSlip(app, "community-plugins", returnAnchor);
 }
 
 export function openTargetSettings(

@@ -169,23 +169,39 @@ export function normalizeWatchProfile(value: unknown): WatchProfileFile {
 }
 
 export interface RootBooksWorkspaceSettings {
-	schemaVersion: 3;
+	schemaVersion: 6;
+	folderNoteNamingMode: "folder-notes" | "index" | "folder-name" | "custom";
+	customFolderNoteName: string;
+	rootNoteNamingMode: "folder-notes" | "index" | "folder-name" | "custom";
+	customRootNoteName: string;
+	rootWorkflowNoteName: string;
 	lastValidDateFormat: string;
 	optionalFilenameTimeFormat: string;
 	colorTabs: boolean;
 	showBookLabel: boolean;
 	notifyOnAuditIssues: boolean;
 	exportWatchProfileOnStartup: boolean;
+	propertyPosition: "top" | "bottom";
+	propertyOrder: string[];
+	completeGlobalProperties: boolean;
 }
 
 export const DEFAULT_SETTINGS: RootBooksWorkspaceSettings = {
-	schemaVersion: 3,
+	schemaVersion: 6,
+	folderNoteNamingMode: "folder-notes",
+	customFolderNoteName: "index",
+	rootNoteNamingMode: "index",
+	customRootNoteName: "index",
+	rootWorkflowNoteName: "index",
 	lastValidDateFormat: "DD.MM.YYYY",
 	optionalFilenameTimeFormat: "",
 	colorTabs: true,
 	showBookLabel: true,
 	notifyOnAuditIssues: true,
 	exportWatchProfileOnStartup: false,
+	propertyPosition: "bottom",
+	propertyOrder: [],
+	completeGlobalProperties: false,
 };
 
 export interface BookPanelMetadata {

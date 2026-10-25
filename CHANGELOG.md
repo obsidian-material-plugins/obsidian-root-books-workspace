@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+- Rename the Obsidian plugin and ID to `obsidian-to-quartz-workspace`, with a
+  separate install folder and migration of the existing watch profile.
+- Add independent global/local filename choices, live collision feedback, and
+  previewed Obsidian-native note renames under `book-structure/v2`.
+- Arrange supported settings-note properties after Properties loses focus;
+  optionally fill shipped defaults in the global note only.
+- Apply position, order, and global-default changes to existing settings notes
+  immediately; remove the stray sorting example from Settings and refresh book
+  folder decoration when Obsidian finishes loading frontmatter.
+- Recheck the reviewed rename plan before applying, require exact source paths,
+  and skip YAML arrangements that would change values or break aliases.
+- Preserve manually edited folder-note `title` values instead of restoring the
+  folder name on every modification.
+- Avoid a duplicate TypeScript check in CI while retaining typechecking for
+  standalone builds and the full verification job.
+- Write book appearance as a `book-appearance/v2` literal `panel` block while
+  continuing to read existing v1 mappings.
+- Added a prominent vault-note convention setting that can follow Folder Notes,
+  use `index.md`, match the folder name, or use a custom basename, plus a
+  separate root workflow-note basename and a Quartz compatibility warning.
+- Show installed but disabled watched plugins in orange with an explicit Enable
+  action. Missing community plugins now open their Obsidian install page, with
+  the same return-to-dashboard control used by settings shortcuts.
+
 ## 0.14.0
 
 - Bound Custom Sort refresh retries to three failed command attempts and log the triggering reasons instead of retrying indefinitely.
@@ -14,14 +40,14 @@
 ## 0.13.1
 
 - Coordinated the ecosystem release with Custom File Explorer Sorting
-  Support's targeted article-navigation popovers. Root Books Toolkit behavior
+  Support's targeted article-navigation popovers. Obsidian to quartz workspace behavior
   and the portable book metadata contract are unchanged.
 
 ## 0.13.0
 
 - Coordinated the ecosystem release with Custom File Explorer Sorting
   Support's intentional-backlink preservation, native Quartz previews, and
-  Finnish article-navigation labels. Root Books Toolkit behavior and the
+  Finnish article-navigation labels. Obsidian to quartz workspace behavior and the
   portable book metadata contract are unchanged.
 
 ## 0.12.0
@@ -72,7 +98,7 @@
 
 ## 0.10.0
 
-- Reduced companion integration to a read-only health audit. Root Books Toolkit
+- Reduced companion integration to a read-only health audit. Obsidian to quartz workspace
   no longer installs or enables plugins, rewrites their settings, disables the
   core Unique Note Creator, or opens a mutating onboarding flow.
 - Moved reusable companion provisioning to the thesis template's curated
@@ -85,11 +111,11 @@
 ## 0.9.3
 
 - Coordinated the ecosystem release with folder-page directory sorting in
-  Custom File Explorer Sorting Support. Root Books Toolkit behavior is unchanged.
+  Custom File Explorer Sorting Support. Obsidian to quartz workspace behavior is unchanged.
 
 ## 0.9.2
 
-- Renamed the plugin display name to Root Books Toolkit so the replacement
+- Renamed the plugin display name to Obsidian to quartz workspace so the replacement
   repository can be submitted independently of the archived community entry
   that still reserves Root Books Workspace.
 - Kept the stable `root-books-workspace` plugin ID and installation directory.

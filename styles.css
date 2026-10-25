@@ -23,6 +23,10 @@
 	border-inline-start: 3px solid var(--color-red);
 }
 
+.root-books-card-warning {
+	border-inline-start: 3px solid var(--color-orange);
+}
+
 .root-books-status-ok,
 .root-books-check-ok .root-books-check-state,
 .root-books-health-ok .root-books-check-state {
@@ -35,8 +39,56 @@
 	color: var(--color-red);
 }
 
+.root-books-status-warning,
 .root-books-health-warning .root-books-check-state {
 	color: var(--color-orange);
+}
+
+.root-books-note-conventions {
+	display: grid;
+	gap: 0.5rem;
+	width: 100%;
+}
+
+.root-books-convention-summary {
+	display: grid;
+	gap: 0.25rem;
+	margin-block-end: 0.5rem;
+	padding: 0.65rem 0.75rem;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary-alt);
+}
+
+.root-books-convention-row {
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+}
+
+.root-books-convention-row .setting-item-info {
+	flex: 1 1 15rem;
+}
+
+.root-books-convention-row .setting-item-control {
+	flex: 1 1 16rem;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+}
+
+.root-books-refresh-slot {
+	min-width: 8.5rem;
+	text-align: right;
+}
+
+.root-books-filename-invalid {
+	border-color: var(--text-error) !important;
+	box-shadow: 0 0 0 1px var(--text-error);
+}
+
+.root-books-collision-paths {
+	margin-block: 0.4rem;
+	padding-inline-start: 1.4rem;
+	word-break: break-word;
 }
 
 .root-books-summary {

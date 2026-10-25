@@ -9,14 +9,20 @@ import {
 } from "obsidian";
 import type { Plugin, SettingDefinitionItem } from "obsidian";
 import { auditCoordinatorHealth } from "./coordinator-health";
+import { renderConventionSettings } from "./convention-settings";
+import { renderPropertySettings } from "./property-settings";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
+import type { NoteRenamePlan } from "./note-rename-plan";
 import {
 	auditWatchTargets,
 	availableTargetSettingPaths,
 	communityInstallManagerWatches,
+	enableWatchedTarget,
 	exportCommunityInstallManagerProfile,
 	installedCommunityPlugins,
 	installedCorePlugins,
 	isCoreUniqueNoteCreatorEnabled,
+	openCommunityPluginInstallPage,
 	openCommunityPluginSettings,
 	openTargetSetting,
 	openTargetSettings,
@@ -44,12 +50,19 @@ import {
 
 export interface RootBooksSettingsHost {
 	settings: RootBooksWorkspaceSettings;
+	folderNoteConvention: FolderNoteConventionResolver;
 	watchTargets: WatchedTarget[];
 	watchProfileHasOverride: boolean;
 	saveSettings(): Promise<void>;
+	applyPropertySettings(): Promise<void>;
 	saveWatchTargets(targets: readonly WatchedTarget[]): Promise<void>;
 	resetWatchTargets(): Promise<void>;
 	refreshDecorations(): void;
+	refreshFolderNoteDetection(): Promise<void>;
+	applyNoteConvention(
+		candidate: RootBooksWorkspaceSettings,
+		preview: NoteRenamePlan,
+	): Promise<void>;
 	openAppearancePicker(): void;
 	runtimeCoordinatorState(): RuntimeCoordinatorState;
 }
@@ -266,7 +279,7 @@ class WatchEditorModal extends Modal {
 		new Setting(card)
 			.setName("Available setting")
 			.setDesc(
-				"Choose a value detected from this target. Toolkit keeps its internal key synchronized automatically.",
+				"Choose a value detected from this target. The coordinator keeps its internal key synchronized automatically.",
 			)
 			.addDropdown((dropdown) => {
 				dropdown.addOption(
@@ -490,6 +503,7 @@ class WatchEditorModal extends Modal {
 }
 
 export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
+	private namingDraft: RootBooksWorkspaceSettings | null = null;
 	constructor(
 		app: App,
 		private readonly host: RootBooksSettingsHost & Plugin,
@@ -500,9 +514,38 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			{
-				name: "Root Books Toolkit",
-				desc: "Toolkit audits watched state without changing Obsidian or plugin settings.",
+				name: "Obsidian to quartz workspace",
+				desc: "Find compatible plugins and keep their portable settings in predictable places.",
 				searchable: false,
+			},
+			{
+				type: "group",
+				heading: "Obsidian to quartz frontmatter settings",
+				items: [
+					{
+						name: "Global and local settings notes",
+						desc: "Choose their filenames and preview any existing notes that would be renamed.",
+						render: (setting) =>
+							this.renderVaultNoteConventions(setting),
+					},
+				],
+			},
+			{
+				type: "group",
+				heading: "Plugin frontmatter properties",
+				items: [
+					{
+						name: "Position, order, and global defaults",
+						desc: "Arrange compatible settings properties after editing a settings note.",
+						render: (setting) =>
+							renderPropertySettings(
+								setting,
+								this.app,
+								this.host.settings,
+								() => this.host.applyPropertySettings(),
+							),
+					},
+				],
 			},
 			{
 				type: "group",
@@ -649,6 +692,22 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 		}
 	}
 
+	private renderVaultNoteConventions(setting: Setting): void {
+		const draft =
+			this.namingDraft ?? (this.namingDraft = { ...this.host.settings });
+		renderConventionSettings(
+			setting,
+			this.app,
+			this.host,
+			draft,
+			() => this.update(),
+			() => {
+				this.namingDraft = null;
+				this.update();
+			},
+		);
+	}
+
 	private renderCheck(
 		card: HTMLElement,
 		check: SettingAudit,
@@ -693,7 +752,7 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 					);
 					if (!found)
 						new Notice(
-							"Opened the correct settings page, but this plugin does not expose a matching setting row that Toolkit can focus.",
+							"Opened the correct settings page, but this plugin does not expose a matching setting row the coordinator can focus.",
 						);
 				});
 		}
@@ -740,8 +799,15 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 					candidate.kind === audit.kind && candidate.id === audit.id,
 			);
 			if (!target) continue;
+			const disabled =
+				audit.kind !== "obsidian" && audit.installed && !audit.enabled;
+			const visualState = disabled
+				? "warning"
+				: audit.configured
+					? "ok"
+					: "error";
 			const card = container.createDiv({
-				cls: `root-books-integration-card ${audit.configured ? "root-books-card-ok" : "root-books-card-error"}`,
+				cls: `root-books-integration-card root-books-card-${visualState}`,
 			});
 			card.dataset.rootBooksReturnAnchor = watchReturnAnchor(target);
 			const heading = card.createDiv({ cls: "root-books-card-heading" });
@@ -751,11 +817,35 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 				cls: "root-books-watch-actions",
 			});
 			actions.createSpan({
-				cls: audit.configured
-					? "root-books-status-ok"
-					: "root-books-status-error",
-				text: audit.configured ? "✓ Ready" : "✕ Needs attention",
+				cls: `root-books-status-${visualState}`,
+				text: disabled
+					? "! Disabled"
+					: audit.configured
+						? "✓ Ready"
+						: "✕ Needs attention",
 			});
+			if (disabled)
+				new ButtonComponent(actions)
+					.setButtonText("Enable")
+					.setCta()
+					.onClick(async () => {
+						try {
+							const enabled = await enableWatchedTarget(
+								this.app,
+								target,
+							);
+							new Notice(
+								enabled
+									? `Enabled ${target.name}.`
+									: `Obsidian could not enable ${target.name}; open its settings and enable it manually.`,
+							);
+							this.update();
+						} catch (error) {
+							new Notice(
+								`Could not enable ${target.name}: ${error instanceof Error ? error.message : String(error)}`,
+							);
+						}
+					});
 			new ButtonComponent(actions)
 				.setButtonText("Edit")
 				.onClick(() => this.openEditor(target.kind, target));
@@ -806,25 +896,37 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 					cls: "root-books-target-description",
 					text: audit.purpose,
 				});
-			new ButtonComponent(footer)
-				.setButtonText(
-					audit.kind === "community-plugin" &&
-						(!audit.installed || !audit.enabled)
-						? "Open Community plugins"
-						: audit.kind === "core-plugin"
-							? "Open core plugin settings"
-							: audit.kind === "obsidian"
-								? "Open options"
-								: "Open plugin settings",
-				)
-				.onClick(() =>
-					openTargetSettings(
-						this.app,
-						target,
-						target.checks[0]?.settingsTab,
-						watchReturnAnchor(target),
-					),
-				);
+			if (audit.kind === "community-plugin" && !audit.installed) {
+				new ButtonComponent(footer)
+					.setButtonText("View install page")
+					.setCta()
+					.onClick(() =>
+						openCommunityPluginInstallPage(
+							this.app,
+							target.id,
+							watchReturnAnchor(target),
+						),
+					);
+			} else {
+				new ButtonComponent(footer)
+					.setButtonText(
+						audit.kind === "community-plugin" && !audit.enabled
+							? "Open Community plugins"
+							: audit.kind === "core-plugin"
+								? "Open core plugin settings"
+								: audit.kind === "obsidian"
+									? "Open options"
+									: "Open plugin settings",
+					)
+					.onClick(() =>
+						openTargetSettings(
+							this.app,
+							target,
+							target.checks[0]?.settingsTab,
+							watchReturnAnchor(target),
+						),
+					);
+			}
 		}
 	}
 
@@ -871,7 +973,7 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 				text: "Core Unique Note Creator is enabled",
 			});
 			conflict.createEl("p", {
-				text: "Toolkit also provides a unique-note command. Disable the core plugin manually if you want a single command owner.",
+				text: "This plugin also provides a unique-note command. Disable the core plugin manually if you want a single command owner.",
 			});
 		}
 
@@ -921,6 +1023,7 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 		const health = auditCoordinatorHealth(
 			this.app,
 			this.host.runtimeCoordinatorState(),
+			this.host.folderNoteConvention,
 		);
 		const container = setting.descEl.createDiv({
 			cls: "root-books-health",
@@ -934,13 +1037,15 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 		);
 		new Setting(container)
 			.addButton((button) =>
-				button.setButtonText("Open root index").onClick(async () => {
-					const file =
-						this.app.vault.getAbstractFileByPath("index.md");
+				button.setButtonText("Open workflow note").onClick(async () => {
+					const rootPath = this.host.folderNoteConvention.rootPath();
+					const file = this.app.vault.getAbstractFileByPath(rootPath);
 					if (file instanceof TFile)
 						await this.app.workspace.getLeaf(false).openFile(file);
 					else
-						new Notice("The vault root does not contain index.md.");
+						new Notice(
+							`The vault root does not contain ${rootPath}.`,
+						);
 				}),
 			)
 			.addButton((button) =>

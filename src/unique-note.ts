@@ -1,5 +1,6 @@
 import { Notice, Plugin, normalizePath } from "obsidian";
 import { formatMomentDate } from "./date-format";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
 import { effectiveNoteRules } from "./note-rules";
 import type { NewNotePipeline } from "./new-note-pipeline";
 import type { RootBooksWorkspaceSettings } from "./types";
@@ -27,6 +28,7 @@ export function registerUniqueNoteAction(
 	plugin: Plugin,
 	settings: RootBooksWorkspaceSettings,
 	pipeline: NewNotePipeline,
+	convention: FolderNoteConventionResolver,
 ): void {
 	const create = async (): Promise<void> => {
 		try {
@@ -37,7 +39,7 @@ export function registerUniqueNoteAction(
 					.getMarkdownFiles()
 					.find((file) => file.parent?.path === folder);
 			const rules = reference
-				? effectiveNoteRules(plugin.app, reference)
+				? effectiveNoteRules(plugin.app, reference, convention)
 				: {
 						dateFormat: settings.lastValidDateFormat,
 						prefixDates: false,

@@ -1,12 +1,13 @@
 {
-  "name": "obsidian-root-books-workspace",
-  "version": "0.14.0",
-  "description": "Obsidian workspace integration for folder-note books, portable appearance, note creation, dates, and sorting.",
+  "name": "obsidian-to-quartz-workspace",
+  "version": "0.15.0",
+  "description": "Obsidian coordinator for portable frontmatter settings, plugin watches, and Quartz workflows.",
   "main": "main.js",
   "type": "module",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "npm run typecheck && node esbuild.config.mjs production",
+    "bundle": "node esbuild.config.mjs production",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint src tests --max-warnings=0",
     "format": "prettier . --check",
@@ -26,12 +27,12 @@
   "license": "0BSD",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/obsidian-material-plugins/obsidian-root-books-workspace.git"
+    "url": "git+https://github.com/obsidian-material-plugins/obsidian-to-quartz-workspace.git"
   },
-  "homepage": "https://github.com/obsidian-material-plugins/obsidian-root-books-workspace",
+  "homepage": "https://github.com/obsidian-material-plugins/obsidian-to-quartz-workspace",
   "pluginContracts": {
-    "book-structure": 1,
-    "book-appearance": 1
+    "book-structure": 2,
+    "book-appearance": 2
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -50,5 +51,8 @@
   "engines": {
     "node": ">=22",
     "npm": ">=10.9.2"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
   }
 }

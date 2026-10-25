@@ -1,4 +1,4 @@
-# Root Books Toolkit
+# Obsidian to quartz workspace
 
 Read the root `AGENTS.md` and the matching files in `.github/instructions/`
 before editing. This repository is one member of the coordinated Root Books

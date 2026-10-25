@@ -5,16 +5,15 @@
       "kind": "community-plugin",
       "id": "folder-notes",
       "name": "Folder Notes",
-      "purpose": "Keeps every book represented by an index.md folder note that Obsidian and Quartz can share.",
+      "purpose": "Creates folder notes that can carry local settings and book appearance.",
       "requireEnabled": true,
       "checks": [
         {
           "path": "folderNoteName",
-          "label": "Folder-note name is index",
-          "description": "Quartz and Toolkit use index.md as the stable entry note for every first-level book folder.",
+          "label": "Folder-note naming is configured",
+          "description": "Use the same basename selected under Local settings and overwrites filename. Quartz can stage custom names as index routes.",
           "settingsLabel": "Folder note name template",
-          "comparison": "equals",
-          "expected": "index"
+          "comparison": "non-empty"
         },
         {
           "path": "folderNoteType",
@@ -91,11 +90,10 @@
       "checks": [
         {
           "path": "indexNoteNameForFolderNotes",
-          "label": "Folder-note name is index",
-          "description": "Custom Sort must read sorting metadata from the same index.md folder note used by Folder Notes and Quartz.",
+          "label": "Sorting folder-note name is configured",
+          "description": "Set this to the same basename used by Folder Notes so sorting metadata comes from the selected local settings notes.",
           "settingsLabel": "Name of index note (Folder Notes support)",
-          "comparison": "equals",
-          "expected": "index"
+          "comparison": "non-empty"
         },
         {
           "path": "suspended",
@@ -195,7 +193,7 @@
         {
           "path": "headerCreated",
           "label": "The creation field is created",
-          "description": "Toolkit and sorting rules expect the creation timestamp under the created property.",
+          "description": "The coordinator and sorting rules expect the creation timestamp under the created property.",
           "settingsLabel": "Created property",
           "comparison": "equals",
           "expected": "created"
@@ -203,7 +201,7 @@
         {
           "path": "headerUpdated",
           "label": "The update field is updated",
-          "description": "Toolkit expects edit timestamps under the updated property so ordering and templates agree.",
+          "description": "The coordinator expects edit timestamps under the updated property so ordering and templates agree.",
           "settingsLabel": "Updated property",
           "comparison": "equals",
           "expected": "updated"
@@ -243,7 +241,7 @@
         {
           "path": "inversionFixStrategy",
           "label": "Out-of-order dates are preserved",
-          "description": "Toolkit reports date inversions without silently rewriting historical created or updated values.",
+          "description": "The coordinator reports date inversions without silently rewriting historical created or updated values.",
           "settingsLabel": "How to fix out-of-order dates",
           "comparison": "equals",
           "expected": "disabled"
@@ -251,7 +249,7 @@
         {
           "path": "postUpdateCommand",
           "label": "Broad post-update sorting is disabled",
-          "description": "Toolkit requests narrowly scoped Custom Sort refreshes, so a command after every timestamp update would duplicate work.",
+          "description": "The coordinator requests narrowly scoped Custom Sort refreshes, so a command after every timestamp update would duplicate work.",
           "comparison": "equals",
           "expected": "",
           "locatable": false

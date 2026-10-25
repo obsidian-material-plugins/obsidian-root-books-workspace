@@ -2,7 +2,9 @@ import { App, TFile, TFolder } from "obsidian";
 import { collectBooks, normalizeAccent, normalizeIcon } from "./book-metadata";
 import { validateDateFormat } from "./date-format";
 import { cachedFrontmatter } from "./frontmatter";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
 import { templatePathFromLink } from "./note-rules";
+import { panelValues } from "./panel-format";
 import type { CoordinatorHealthItem, RuntimeCoordinatorState } from "./types";
 
 interface CommandManager {
@@ -47,14 +49,18 @@ function runtimeItems(state: RuntimeCoordinatorState): CoordinatorHealthItem[] {
 	}));
 }
 
-function workflowItems(app: App): CoordinatorHealthItem[] {
-	const root = app.vault.getAbstractFileByPath("index.md");
+function workflowItems(
+	app: App,
+	convention: FolderNoteConventionResolver,
+): CoordinatorHealthItem[] {
+	const rootPath = convention.rootPath();
+	const root = app.vault.getAbstractFileByPath(rootPath);
 	if (!(root instanceof TFile)) {
 		return [
 			{
 				id: "root-index",
 				label: "Root workflow note",
-				detail: "Missing index.md at the vault root",
+				detail: `Missing ${rootPath} at the vault root`,
 				status: "error",
 			},
 		];
@@ -78,7 +84,7 @@ function workflowItems(app: App): CoordinatorHealthItem[] {
 		{
 			id: "root-index",
 			label: "Root workflow note",
-			detail: "index.md is available",
+			detail: `${rootPath} is available`,
 			status: "ok",
 		},
 		{
@@ -116,19 +122,22 @@ function workflowItems(app: App): CoordinatorHealthItem[] {
 	];
 }
 
-function bookItems(app: App): CoordinatorHealthItem[] {
+function bookItems(
+	app: App,
+	convention: FolderNoteConventionResolver,
+): CoordinatorHealthItem[] {
 	const folders = app.vault
 		.getRoot()
 		.children.filter(
 			(child): child is TFolder =>
 				child instanceof TFolder && child.name !== "templates",
 		);
-	const books = collectBooks(app);
+	const books = collectBooks(app, convention);
 	const missingIndexes = folders.filter(
 		(folder) =>
 			!(
 				app.vault.getAbstractFileByPath(
-					`${folder.path}/index.md`,
+					convention.folderPath(folder),
 				) instanceof TFile
 			),
 	);
@@ -136,9 +145,8 @@ function bookItems(app: App): CoordinatorHealthItem[] {
 		const file = app.vault.getAbstractFileByPath(book.indexPath);
 		if (!(file instanceof TFile)) return true;
 		const panel = cachedFrontmatter(app, file).panel;
-		if (typeof panel !== "object" || panel === null || Array.isArray(panel))
-			return true;
-		const values = panel as Record<string, unknown>;
+		const values = panelValues(panel);
+		if (!values) return true;
 		return !normalizeIcon(values.icon) || !normalizeAccent(values.accent);
 	});
 
@@ -146,17 +154,25 @@ function bookItems(app: App): CoordinatorHealthItem[] {
 		{
 			id: "books-detected",
 			label: "Detected books",
-			detail: `${books.length} first-level folder${books.length === 1 ? "" : "s"} with index.md`,
+			detail: `${books.length} first-level folder${books.length === 1 ? "" : "s"} with the configured folder note`,
 			status: books.length > 0 ? "ok" : "warning",
 		},
 		{
 			id: "book-indexes",
-			label: "Book index notes",
+			label: "Book folder notes",
 			detail:
 				missingIndexes.length === 0
-					? "Every first-level book folder has index.md"
+					? "Every first-level book folder has its configured folder note"
 					: `Missing in: ${missingIndexes.map((folder) => folder.path).join(", ")}`,
 			status: missingIndexes.length === 0 ? "ok" : "error",
+		},
+		{
+			id: "quartz-compatibility",
+			label: "Root Books for Quartz compatibility",
+			detail: convention.snapshot().quartzCompatible
+				? "Root and folder notes use index.md"
+				: "Custom names need the book-structure/v2 staging adapter before Quartz builds",
+			status: convention.snapshot().quartzCompatible ? "ok" : "warning",
 		},
 		{
 			id: "book-panels",
@@ -173,6 +189,7 @@ function bookItems(app: App): CoordinatorHealthItem[] {
 export function auditCoordinatorHealth(
 	app: App,
 	state: RuntimeCoordinatorState,
+	convention: FolderNoteConventionResolver,
 ): {
 	workflow: CoordinatorHealthItem[];
 	books: CoordinatorHealthItem[];
@@ -190,8 +207,8 @@ export function auditCoordinatorHealth(
 		status: customSortAvailable ? "ok" : "error",
 	});
 	return {
-		workflow: workflowItems(app),
-		books: bookItems(app),
+		workflow: workflowItems(app, convention),
+		books: bookItems(app, convention),
 		runtime,
 	};
 }
