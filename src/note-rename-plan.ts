@@ -39,11 +39,12 @@ export function planNoteRenames(
 	const existing = new Map(
 		existingPaths.map((path) => [path.toLowerCase(), path]),
 	);
+	const exactPaths = new Set(existingPaths);
 	const renames: PlannedNoteRename[] = [];
 	const conflicts = new Set<string>();
 	const destinations = new Set<string>();
 	const queue = (from: string, to: string): void => {
-		if (!existing.has(from.toLowerCase()) || from === to) return;
+		if (!exactPaths.has(from) || from === to) return;
 		const destination = to.toLowerCase();
 		if (existing.has(destination) || destinations.has(destination)) {
 			conflicts.add(to);
@@ -61,6 +62,6 @@ export function planNoteRenames(
 	return {
 		renames: renames.sort((a, b) => a.from.localeCompare(b.from)),
 		conflicts: [...conflicts].sort(),
-		missingRoot: !existing.has(current.rootPath.toLowerCase()),
+		missingRoot: !exactPaths.has(current.rootPath),
 	};
 }

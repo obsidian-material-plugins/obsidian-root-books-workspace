@@ -88,7 +88,10 @@ class ConventionApplyModal extends Modal {
 					.onClick(async () => {
 						button.setDisabled(true);
 						try {
-							await this.host.applyNoteConvention(this.candidate);
+							await this.host.applyNoteConvention(
+								this.candidate,
+								this.plan,
+							);
 							this.close();
 							this.onApplied();
 						} catch (error) {

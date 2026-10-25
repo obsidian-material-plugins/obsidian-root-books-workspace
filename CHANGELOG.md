@@ -11,6 +11,8 @@
 - Apply position, order, and global-default changes to existing settings notes
   immediately; remove the stray sorting example from Settings and refresh book
   folder decoration when Obsidian finishes loading frontmatter.
+- Recheck the reviewed rename plan before applying, require exact source paths,
+  and skip YAML arrangements that would change values or break aliases.
 - Preserve manually edited folder-note `title` values instead of restoring the
   folder name on every modification.
 - Avoid a duplicate TypeScript check in CI while retaining typechecking for

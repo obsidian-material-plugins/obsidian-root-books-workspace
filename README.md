@@ -132,6 +132,9 @@ Books staging adapter reads that record and presents canonical `index.md` routes
 from a build copy, leaving the authored vault untouched. A build with conflicting
 `index.md` destinations stops and lists them. This is `book-structure/v2`;
 `index.md` remains the default if the record is absent.
+This v2 staging behavior requires a Quartz Root Books build containing its
+`book-structure/v2` adapter. The currently published Quartz package predates
+that adapter; the thesis template pins the updated Quartz source for testing.
 
 ## Plugin frontmatter properties
 
@@ -144,7 +147,7 @@ whole YAML blocks in that note. This preserves multiline values such as
 `sorting-spec: |`, comments, quoting, unrelated properties, and line endings.
 Changing position or applying a manual order also updates existing settings
 notes immediately.
-Malformed or duplicate-key frontmatter is left alone with a notice.
+Malformed, duplicate-key, or alias-sensitive frontmatter is left alone with a notice.
 
 **Add missing global properties** is off by default. When enabled, it fills
 only shipped defaults in the global settings note immediately and after
@@ -203,6 +206,9 @@ implement `book-structure/v2` and `book-appearance/v2` from the
 [plugin contract catalog](https://github.com/obsidian-material-plugins/plugin-contracts).
 Their package releases are independent. Compatibility follows the declared
 contract versions rather than matching package versions.
+For this unreleased Obsidian build, use Quartz Root Books source at or after
+`eb21950` for the v2 appearance reader and filename staging adapter. The
+released Quartz `0.14.1` package does not include them yet.
 
 [Custom File Explorer Sorting for Quartz](https://github.com/obsidian-material-plugins/quartz-custom-file-explorer-sorting)
 is a separate optional sorting adapter.

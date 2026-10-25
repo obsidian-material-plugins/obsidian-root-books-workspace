@@ -9,6 +9,7 @@ import type { RootBooksWorkspaceSettings } from "./types";
 
 export class SettingsNoteOrganizer {
 	private timers = new Map<string, number>();
+	private pending = new Set<string>();
 
 	constructor(
 		private readonly plugin: Plugin,
@@ -27,12 +28,7 @@ export class SettingsNoteOrganizer {
 				const target = event.target;
 				if (!(target instanceof HTMLElement)) return;
 				const properties = target.closest(".metadata-container");
-				if (
-					!properties ||
-					(event.relatedTarget instanceof Node &&
-						properties.contains(event.relatedTarget))
-				)
-					return;
+				if (!properties) return;
 				const file = this.plugin.app.workspace.getActiveFile();
 				if (!(file instanceof TFile) || !this.isSettingsNote(file))
 					return;
@@ -41,14 +37,21 @@ export class SettingsNoteOrganizer {
 					".metadata-property-key-input",
 				);
 				const key = keyElement?.value ?? keyElement?.textContent ?? "";
+				if (managedKeys.has(key.trim())) this.pending.add(file.path);
 				if (
-					!managedKeys.has(key.trim()) &&
+					event.relatedTarget instanceof Node &&
+					properties.contains(event.relatedTarget)
+				)
+					return;
+				if (
+					!this.pending.has(file.path) &&
 					!(
 						this.settings.completeGlobalProperties &&
 						file.path === this.convention.rootPath()
 					)
 				)
 					return;
+				this.pending.delete(file.path);
 				const previous = this.timers.get(file.path);
 				if (previous !== undefined) window.clearTimeout(previous);
 				this.timers.set(
@@ -101,5 +104,6 @@ export class SettingsNoteOrganizer {
 	dispose(): void {
 		for (const timer of this.timers.values()) window.clearTimeout(timer);
 		this.timers.clear();
+		this.pending.clear();
 	}
 }

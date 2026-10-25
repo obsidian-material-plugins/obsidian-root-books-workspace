@@ -56,3 +56,18 @@ test("lists every occupied destination before applying anything", () => {
 	assert.deepEqual(result.conflicts, ["A/A.md", "B/B.md", "overview.md"]);
 	assert.deepEqual(result.renames, []);
 });
+
+test("does not plan a rename for a differently cased source path", () => {
+	const plan = planNoteRenames(
+		["Index.md", "Book/Index.md"],
+		[{ path: "Book", name: "Book" }],
+		{ rootPath: "index.md", localPattern: "index", extension: ".md" },
+		{
+			rootPath: "home.md",
+			localPattern: "{{folder_name}}",
+			extension: ".md",
+		},
+	);
+	assert.equal(plan.missingRoot, true);
+	assert.deepEqual(plan.renames, []);
+});

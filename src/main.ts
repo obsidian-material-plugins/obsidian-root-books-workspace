@@ -21,6 +21,7 @@ import {
 import { watchAuditIssueKeys } from "./integration-audit";
 import { NewNotePipeline } from "./new-note-pipeline";
 import { planNoteRenames } from "./note-rename-plan";
+import type { NoteRenamePlan } from "./note-rename-plan";
 import { normalizePropertyOrder } from "./property-organizer";
 import { RootBooksWorkspaceSettingTab } from "./settings";
 import { SettingsNoteOrganizer } from "./settings-note-organizer";
@@ -175,6 +176,7 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 
 	async applyNoteConvention(
 		candidate: RootBooksWorkspaceSettings,
+		preview: NoteRenamePlan,
 	): Promise<void> {
 		const current = this.folderNoteConvention.snapshot();
 		const next = this.folderNoteConvention.preview(candidate);
@@ -202,6 +204,10 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		if (plan.conflicts.length > 0)
 			throw new Error(
 				`These destinations already exist: ${plan.conflicts.join(", ")}`,
+			);
+		if (JSON.stringify(plan) !== JSON.stringify(preview))
+			throw new Error(
+				"Settings notes changed since this preview. Review the filenames again before applying.",
 			);
 
 		const completed: typeof plan.renames = [];

@@ -12,6 +12,7 @@ import { auditCoordinatorHealth } from "./coordinator-health";
 import { renderConventionSettings } from "./convention-settings";
 import { renderPropertySettings } from "./property-settings";
 import type { FolderNoteConventionResolver } from "./folder-note-convention";
+import type { NoteRenamePlan } from "./note-rename-plan";
 import {
 	auditWatchTargets,
 	availableTargetSettingPaths,
@@ -58,7 +59,10 @@ export interface RootBooksSettingsHost {
 	resetWatchTargets(): Promise<void>;
 	refreshDecorations(): void;
 	refreshFolderNoteDetection(): Promise<void>;
-	applyNoteConvention(candidate: RootBooksWorkspaceSettings): Promise<void>;
+	applyNoteConvention(
+		candidate: RootBooksWorkspaceSettings,
+		preview: NoteRenamePlan,
+	): Promise<void>;
 	openAppearancePicker(): void;
 	runtimeCoordinatorState(): RuntimeCoordinatorState;
 }

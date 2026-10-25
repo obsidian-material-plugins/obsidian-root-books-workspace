@@ -65,4 +65,16 @@ test("skips malformed and duplicate-key frontmatter", () => {
 		organizeSettingsFrontmatter("---\npanel: a\n", options),
 		"---\npanel: a\n",
 	);
+	assert.throws(() =>
+		organizeSettingsFrontmatter(
+			"---\ntitle: [unfinished\npanel: x\n---\n",
+			options,
+		),
+	);
+	assert.throws(() =>
+		organizeSettingsFrontmatter(
+			"---\nanchor: &name value\npanel: *name\n---\n",
+			options,
+		),
+	);
 });

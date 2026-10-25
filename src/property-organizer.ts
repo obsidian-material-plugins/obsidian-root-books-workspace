@@ -70,6 +70,51 @@ interface Segment {
 	lines: string[];
 }
 
+function parsedYaml(source: string): Record<string, unknown> {
+	const document = parseDocument(source, { uniqueKeys: true, strict: true });
+	if (document.errors.length)
+		throw new Error(
+			"Invalid frontmatter YAML; settings properties were left unchanged.",
+		);
+	try {
+		const value: unknown = document.toJS({ maxAliasCount: 100 });
+		if (value === null) return {};
+		if (typeof value !== "object" || Array.isArray(value))
+			throw new Error("Expected a YAML mapping");
+		return value as Record<string, unknown>;
+	} catch {
+		throw new Error(
+			"Invalid frontmatter YAML or alias; settings properties were left unchanged.",
+		);
+	}
+}
+
+function canonical(value: unknown): unknown {
+	if (Array.isArray(value)) return value.map(canonical);
+	if (value && typeof value === "object")
+		return Object.fromEntries(
+			Object.entries(value)
+				.sort(([a], [b]) => a.localeCompare(b))
+				.map(([key, item]) => [key, canonical(item)]),
+		);
+	return value;
+}
+
+function validateChange(before: string, after: string): void {
+	const original = parsedYaml(before);
+	const changed = parsedYaml(after);
+	for (const [key, value] of Object.entries(original)) {
+		if (
+			!Object.hasOwn(changed, key) ||
+			JSON.stringify(canonical(value)) !==
+				JSON.stringify(canonical(changed[key]))
+		)
+			throw new Error(
+				`Moving ${key} would change a YAML value; settings properties were left unchanged.`,
+			);
+	}
+}
+
 /** Move complete source slices so block scalars, quoting, and comments stay intact. */
 export function organizeSettingsFrontmatter(
 	source: string,
@@ -155,5 +200,7 @@ export function organizeSettingsFrontmatter(
 		...prefix,
 		...arranged.flatMap((segment) => segment.lines),
 	].join(newline);
+	validateChange(match[2]!, inside);
 	return `${match[1]}${inside}${match[3]}${source.slice(match[0].length)}`;
 }
+import { parseDocument } from "yaml";
