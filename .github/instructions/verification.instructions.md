@@ -21,10 +21,13 @@ git diff --check
 Manually test the dashboard with all companions present, each companion
 missing, a disabled companion, recommended settings drifting, and the core
 Unique Note Creator enabled. Confirm versions and all current/expected values
-render correctly; exposed setting shortcuts open, traverse internal tabs or
+render correctly; disabled targets are orange and enable only after their
+button is clicked; missing community targets open the correct
+`obsidian://show-plugin?id=...` page; exposed setting shortcuts open, traverse internal tabs or
 nested Manage dialogs when required, scroll to, and highlight the intended row.
-Confirm the temporary return slip restores the originating dashboard row and is
-removed after leaving or closing Settings. Confirm the Custom Sort runtime flag
+Confirm the temporary return slip restores the originating dashboard row after
+settings and install-page jumps and is removed after leaving or closing
+Settings. Confirm the Custom Sort runtime flag
 renders as Active/Suspended.
 Confirm community, core-plugin, and Obsidian-preference watches support add,
 edit, remove, equals, exists, non-empty, and one-of, accept only detected stored
@@ -34,7 +37,10 @@ notifications respect their toggle, do not repeat unchanged issues, and notify
 again after a repaired setting drifts a second time. Confirm Community Install
 Manager import and merge-safe export preserve unrelated list and settings
 entries and export only exact values. Confirm the audit and health panels never
-change plugin enablement or live settings. Test plugin disable/re-enable, new
+change plugin enablement without an explicit Enable click and never change live
+settings. Test Folder Notes detection, fixed index, folder-name, and custom
+folder-note modes; a custom root workflow name; the Quartz compatibility
+warning; plugin disable/re-enable; new
 notes, unique notes, folder renames, filename-date
 renames, template application, Custom Sort refresh coalescing, appearance
 editing, bundled-icon browsing, native tab icon/accent decoration, first-level

@@ -5,6 +5,7 @@ import {
 	bookIdForPath,
 	collectBooks,
 } from "./book-metadata";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
 import type { BookRecord, RootBooksWorkspaceSettings } from "./types";
 
 interface FileBackedView {
@@ -31,6 +32,7 @@ export class BookDecorations {
 	constructor(
 		private readonly plugin: Plugin,
 		private readonly settings: RootBooksWorkspaceSettings,
+		private readonly convention: FolderNoteConventionResolver,
 	) {
 		this.status = plugin.addStatusBarItem();
 		this.status.addClass("root-books-status");
@@ -52,14 +54,17 @@ export class BookDecorations {
 		);
 		this.plugin.registerEvent(
 			this.plugin.app.metadataCache.on("changed", (file) => {
-				if (file.name === "index.md") this.refresh();
+				if (this.convention.isFolderNote(file)) this.refresh();
 			}),
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.metadataCache.on("resolved", () => this.refresh()),
 		);
 		this.refresh();
 	}
 
 	refresh(): void {
-		const books = collectBooks(this.plugin.app);
+		const books = collectBooks(this.plugin.app, this.convention);
 		this.plugin.app.workspace.iterateAllLeaves((leaf) =>
 			this.decorateLeaf(leaf, books),
 		);
@@ -68,7 +73,7 @@ export class BookDecorations {
 	}
 
 	openAppearancePicker(): void {
-		const books = collectBooks(this.plugin.app);
+		const books = collectBooks(this.plugin.app, this.convention);
 		if (books.length === 0) return;
 		new BookPickerModal(this.plugin.app, books, (book) =>
 			this.openAppearance(book),
@@ -160,7 +165,7 @@ export class BookDecorations {
 	}
 
 	private openBookPicker(): void {
-		const books = collectBooks(this.plugin.app);
+		const books = collectBooks(this.plugin.app, this.convention);
 		if (books.length === 0) return;
 		new BookPickerModal(this.plugin.app, books, (book) => {
 			const file = this.plugin.app.vault.getAbstractFileByPath(

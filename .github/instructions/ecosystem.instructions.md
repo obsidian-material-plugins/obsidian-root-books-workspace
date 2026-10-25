@@ -9,8 +9,8 @@ applyTo: "**"
 This project implements the following independently versioned contracts from
 `obsidian-material-plugins/plugin-contracts`:
 
-- `book-structure/v1`
-- `book-appearance/v1`
+- `book-structure/v2` (writes the portable convention record and previews source-note renames)
+- `book-appearance/v2` (reads the v1 panel mapping during migration)
 
 The Quartz counterpart is
 `obsidian-material-plugins/quartz-root-books-workspace`. Optional navigation

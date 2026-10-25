@@ -1,5 +1,6 @@
 import { Notice, Plugin, TFile, normalizePath } from "obsidian";
 import { cachedFrontmatter, frontmatterRecord } from "./frontmatter";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
 import {
 	applyMarkdownTemplate,
 	canonicalTemplateLink,
@@ -68,12 +69,11 @@ export class NewNotePipeline {
 	constructor(
 		private readonly plugin: Plugin,
 		private readonly sorting: SortingCoordinator,
+		private readonly convention: FolderNoteConventionResolver,
 	) {}
 
 	async start(): Promise<void> {
-		await ensureRootWorkflowProperties(this.plugin.app);
-		this.readRootBoolean();
-		await this.normalizeTemplateLinks();
+		await this.refreshConvention();
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on("create", (item) => {
 				if (item instanceof TFile && item.extension === "md") {
@@ -83,11 +83,21 @@ export class NewNotePipeline {
 		);
 		this.plugin.registerEvent(
 			this.plugin.app.metadataCache.on("changed", (file) => {
-				if (file.path === "index.md") this.guardRootBoolean();
-				if (file.name === "index.md")
+				if (this.convention.isRootWorkflowNote(file))
+					this.guardRootBoolean();
+				if (
+					this.convention.isRootWorkflowNote(file) ||
+					this.convention.isFolderNote(file)
+				)
 					void this.normalizeTemplateLink(file);
 			}),
 		);
+	}
+
+	async refreshConvention(): Promise<void> {
+		await ensureRootWorkflowProperties(this.plugin.app, this.convention);
+		this.readRootBoolean();
+		await this.normalizeTemplateLinks();
 	}
 
 	process(file: TFile, options: ProcessOptions = {}): Promise<TFile> {
@@ -103,13 +113,17 @@ export class NewNotePipeline {
 	private async run(file: TFile, options: ProcessOptions): Promise<TFile> {
 		if (
 			file.extension !== "md" ||
-			file.path === "index.md" ||
+			this.convention.isRootWorkflowNote(file) ||
 			file.path.startsWith("templates/")
 		) {
 			return file;
 		}
 
-		const rules = effectiveNoteRules(this.plugin.app, file);
+		const rules = effectiveNoteRules(
+			this.plugin.app,
+			file,
+			this.convention,
+		);
 		let current = file;
 		if (!options.skipPrefix) {
 			const basename = prefixedBasename(current, rules);
@@ -146,8 +160,13 @@ export class NewNotePipeline {
 	}
 
 	private readRootBoolean(): void {
-		const root = this.plugin.app.vault.getAbstractFileByPath("index.md");
-		if (!(root instanceof TFile)) return;
+		const root = this.plugin.app.vault.getAbstractFileByPath(
+			this.convention.rootPath(),
+		);
+		if (!(root instanceof TFile)) {
+			this.lastValidRootPrefix = false;
+			return;
+		}
 		const value = cachedFrontmatter(this.plugin.app, root)[
 			"add-date-to-new-notes"
 		];
@@ -155,7 +174,9 @@ export class NewNotePipeline {
 	}
 
 	private guardRootBoolean(): void {
-		const root = this.plugin.app.vault.getAbstractFileByPath("index.md");
+		const root = this.plugin.app.vault.getAbstractFileByPath(
+			this.convention.rootPath(),
+		);
 		if (!(root instanceof TFile)) return;
 		const value = cachedFrontmatter(this.plugin.app, root)[
 			"add-date-to-new-notes"
@@ -175,7 +196,9 @@ export class NewNotePipeline {
 	}
 
 	private async restoreRootBoolean(): Promise<void> {
-		const root = this.plugin.app.vault.getAbstractFileByPath("index.md");
+		const root = this.plugin.app.vault.getAbstractFileByPath(
+			this.convention.rootPath(),
+		);
 		if (!(root instanceof TFile)) return;
 		await this.plugin.app.fileManager.processFrontMatter(
 			root,
@@ -194,7 +217,10 @@ export class NewNotePipeline {
 
 	private async normalizeTemplateLinks(): Promise<void> {
 		for (const file of this.plugin.app.vault.getMarkdownFiles()) {
-			if (file.name === "index.md")
+			if (
+				this.convention.isRootWorkflowNote(file) ||
+				this.convention.isFolderNote(file)
+			)
 				await this.normalizeTemplateLink(file);
 		}
 	}

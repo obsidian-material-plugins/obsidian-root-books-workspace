@@ -6,7 +6,8 @@ import {
 	type WatchProfileFile,
 } from "./types";
 
-export const WATCH_PROFILE_FILENAME = "root-books-watch-profile.json";
+export const WATCH_PROFILE_FILENAME = "obsidian-to-quartz-watch-profile.json";
+export const LEGACY_WATCH_PROFILE_FILENAME = "root-books-watch-profile.json";
 
 const DEFAULT_PROFILE = normalizeWatchProfile(defaultProfileJson);
 

@@ -1,4 +1,4 @@
-# Root Books Toolkit repository contract
+# Obsidian to quartz workspace repository contract
 
 Detailed agent-only instructions live under `.github/instructions/`.
 

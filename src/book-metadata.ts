@@ -11,6 +11,8 @@ import {
 } from "obsidian";
 import type { FuzzyMatch, TextComponent } from "obsidian";
 import { cachedFrontmatter, frontmatterRecord } from "./frontmatter";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
+import { panelLiteral, panelValues } from "./panel-format";
 import type { BookPanelMetadata, BookRecord } from "./types";
 
 export const DEFAULT_PANEL: BookPanelMetadata = {
@@ -41,7 +43,7 @@ function ownRecord(value: unknown): Record<string, unknown> | null {
 
 export function panelFromFrontmatter(frontmatter: unknown): BookPanelMetadata {
 	const record = ownRecord(frontmatter);
-	const panel = ownRecord(record?.panel);
+	const panel = panelValues(record?.panel);
 	return {
 		icon: normalizeIcon(panel?.icon) ?? DEFAULT_PANEL.icon,
 		accent: normalizeAccent(panel?.accent) ?? DEFAULT_PANEL.accent,
@@ -58,7 +60,10 @@ function displayTitle(app: App, index: TFile, fallback: string): string {
 	return typeof title === "string" && title.trim() ? title.trim() : fallback;
 }
 
-export function collectBooks(app: App): BookRecord[] {
+export function collectBooks(
+	app: App,
+	convention: FolderNoteConventionResolver,
+): BookRecord[] {
 	return app.vault
 		.getRoot()
 		.children.filter(
@@ -67,9 +72,10 @@ export function collectBooks(app: App): BookRecord[] {
 		)
 		.map((folder) => {
 			const index = app.vault.getAbstractFileByPath(
-				`${folder.path}/index.md`,
+				convention.folderPath(folder),
 			);
-			if (!(index instanceof TFile)) return null;
+			if (!(index instanceof TFile) || index.extension !== "md")
+				return null;
 			return {
 				id: folder.path,
 				name: displayTitle(app, index, folder.name),
@@ -96,7 +102,7 @@ export async function saveBookPanel(
 		throw new Error(`Missing book index: ${book.indexPath}`);
 	await app.fileManager.processFrontMatter(file, (value: unknown) => {
 		const frontmatter = frontmatterRecord(value);
-		frontmatter.panel = { icon, accent };
+		frontmatter.panel = panelLiteral(icon, accent);
 	});
 }
 
@@ -126,7 +132,7 @@ export class BookAppearanceModal extends Modal {
 
 		new Setting(this.contentEl)
 			.setName("Accent color")
-			.setDesc("Stored as a direct hexadecimal value in panel.accent.")
+			.setDesc("Stored in the panel block as a six-digit hex color.")
 			.addColorPicker((picker) =>
 				picker.setValue(accent).onChange((value) => {
 					accent = value;

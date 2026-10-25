@@ -6,6 +6,7 @@ import {
 	validateDateFormat,
 } from "./date-format";
 import { cachedFrontmatter, frontmatterRecord } from "./frontmatter";
+import type { FolderNoteConventionResolver } from "./folder-note-convention";
 
 export interface EffectiveNoteRules {
 	dateFormat: string;
@@ -42,15 +43,19 @@ function linkValue(value: unknown): string | undefined {
 	return value.trim();
 }
 
-export function effectiveNoteRules(app: App, file: TFile): EffectiveNoteRules {
-	const root = app.vault.getAbstractFileByPath("index.md");
+export function effectiveNoteRules(
+	app: App,
+	file: TFile,
+	convention: FolderNoteConventionResolver,
+): EffectiveNoteRules {
+	const root = app.vault.getAbstractFileByPath(convention.rootPath());
 	const rootFrontmatter = root instanceof TFile ? frontmatter(app, root) : {};
 	let prefixDates: boolean | undefined;
 	let templateLink: string | undefined;
 
 	for (const folder of ancestorFolders(file)) {
 		const index = app.vault.getAbstractFileByPath(
-			normalizePath(`${folder.path}/index.md`),
+			normalizePath(convention.folderPath(folder)),
 		);
 		if (!(index instanceof TFile)) continue;
 		const metadata = frontmatter(app, index);
@@ -129,8 +134,11 @@ export function resolveDateManagerConfiguration(
 	};
 }
 
-export async function ensureRootWorkflowProperties(app: App): Promise<void> {
-	const root = app.vault.getAbstractFileByPath("index.md");
+export async function ensureRootWorkflowProperties(
+	app: App,
+	convention: FolderNoteConventionResolver,
+): Promise<void> {
+	const root = app.vault.getAbstractFileByPath(convention.rootPath());
 	if (!(root instanceof TFile)) return;
 	await app.fileManager.processFrontMatter(root, (value: unknown) => {
 		const metadata = frontmatterRecord(value);
