@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.15.1
+
+- Remove a redundant host name from the directory description so the community
+  release review can accept the listing.
+
+## 0.15.0
 
 - Keep the published `root-books-workspace` plugin ID and adopt the display name
   Quartz Workspace Sync while the repository remains `obsidian-to-quartz-workspace`.

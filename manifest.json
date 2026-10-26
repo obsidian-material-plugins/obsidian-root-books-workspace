@@ -1,7 +1,7 @@
 {
   "id": "root-books-workspace",
   "name": "Quartz Workspace Sync",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "minAppVersion": "1.13.0",
   "description": "Coordinate portable frontmatter settings and plugin watches to support working with Quartz.",
   "author": "Material Plugins",
