@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-to-quartz-workspace",
+  "name": "obsidian-root-books-workspace",
   "version": "0.15.1",
   "description": "Obsidian coordinator for portable frontmatter settings, plugin watches, and Quartz workflows.",
   "main": "main.js",
@@ -27,9 +27,9 @@
   "license": "0BSD",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/obsidian-material-plugins/obsidian-to-quartz-workspace.git"
+    "url": "git+https://github.com/obsidian-material-plugins/obsidian-root-books-workspace.git"
   },
-  "homepage": "https://github.com/obsidian-material-plugins/obsidian-to-quartz-workspace",
+  "homepage": "https://github.com/obsidian-material-plugins/obsidian-root-books-workspace",
   "pluginContracts": {
     "book-structure": 2,
     "book-appearance": 2

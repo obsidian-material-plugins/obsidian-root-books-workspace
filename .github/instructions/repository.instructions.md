@@ -8,7 +8,14 @@ applyTo: "**"
 
 - Quartz Workspace Sync is an Obsidian community plugin. Source lives in `src/`.
 - Keep the published manifest ID `root-books-workspace`; the repository and
-  package name `obsidian-to-quartz-workspace` do not need to match it.
+  package name are `obsidian-root-books-workspace`, while the display name is
+  Quartz Workspace Sync.
+- Treat the Community Directory repository location as release-critical. Before
+  renaming or transferring the GitHub repository, obtain confirmation that a
+  Directory administrator will update the entry's repository mapping. GitHub
+  redirects are insufficient because automated reviews may request nested API
+  resources without following them. After an approved move, verify the
+  dashboard repository link and run a branch preview before releasing.
 - Keep `src/main.ts` limited to lifecycle and orchestration.
 - Keep human documentation in `README.md` and `CHANGELOG.md`. Agent-only
   material belongs in `AGENTS.md` or `.github/`.

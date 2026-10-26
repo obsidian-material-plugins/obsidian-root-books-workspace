@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Restore the canonical repository and package name
+  `obsidian-root-books-workspace` without changing the published
+  `root-books-workspace` manifest ID or Quartz Workspace Sync display name.
+- Require Community Directory repository mapping coordination before any future
+  GitHub rename or transfer so automated reviews do not depend on redirects.
+
 ## 0.15.1
 
 - Remove a redundant host name from the directory description so the community

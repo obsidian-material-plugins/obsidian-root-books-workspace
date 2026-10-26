@@ -3,8 +3,13 @@
 Detailed agent-only instructions live under `.github/instructions/`.
 
 Keep the published Obsidian manifest ID `root-books-workspace` stable. The
-repository and npm package remain `obsidian-to-quartz-workspace`; the display
+repository and npm package remain `obsidian-root-books-workspace`; the display
 name is Quartz Workspace Sync.
+
+Treat the Community Directory's GitHub repository mapping as release-critical.
+Do not rename or transfer this repository until a Directory administrator has
+confirmed the matching location update; GitHub redirects are not sufficient
+for automated release and branch reviews.
 
 Before editing, read:
 
