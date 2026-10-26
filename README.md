@@ -180,7 +180,7 @@ never import their own creation or update timestamps.
 
 The published Community plugins entry keeps the `root-books-workspace` ID, so
 existing installations can update normally. The GitHub repository remains
-`obsidian-to-quartz-workspace`. After its release, install or update the plugin
+`obsidian-root-books-workspace`. After its release, install or update the plugin
 through Obsidian's Community plugins screen. Manual installations
 need the three standard release assets:
 `main.js`, `manifest.json`, and `styles.css`. The default watch profile is
