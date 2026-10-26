@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-- Rename the Obsidian plugin and ID to `obsidian-to-quartz-workspace`, with a
-  separate install folder and migration of the existing watch profile.
+- Keep the published `root-books-workspace` plugin ID and adopt the display name
+  Quartz Workspace Sync while the repository remains `obsidian-to-quartz-workspace`.
+  Preserve settings from the short-lived preview install folder and migrate the
+  existing watch profile.
 - Add independent global/local filename choices, live collision feedback, and
   previewed Obsidian-native note renames under `book-structure/v2`.
 - Arrange supported settings-note properties after Properties loses focus;

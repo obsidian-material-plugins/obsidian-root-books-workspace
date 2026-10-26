@@ -1,6 +1,10 @@
-# Obsidian to quartz workspace repository contract
+# Quartz Workspace Sync repository contract
 
 Detailed agent-only instructions live under `.github/instructions/`.
+
+Keep the published Obsidian manifest ID `root-books-workspace` stable. The
+repository and npm package remain `obsidian-to-quartz-workspace`; the display
+name is Quartz Workspace Sync.
 
 Before editing, read:
 

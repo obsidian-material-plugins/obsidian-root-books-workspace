@@ -1,4 +1,4 @@
-# Obsidian to quartz workspace
+# Quartz Workspace Sync
 
 Read the root `AGENTS.md` and the matching files in `.github/instructions/`
 before editing. This repository is one member of the coordinated Root Books

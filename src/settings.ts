@@ -514,7 +514,7 @@ export class RootBooksWorkspaceSettingTab extends PluginSettingTab {
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			{
-				name: "Obsidian to quartz workspace",
+				name: "Quartz Workspace Sync",
 				desc: "Find compatible plugins and keep their portable settings in predictable places.",
 				searchable: false,
 			},

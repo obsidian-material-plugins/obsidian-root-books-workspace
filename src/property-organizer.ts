@@ -10,25 +10,25 @@ export interface PortableProperty {
 export const PORTABLE_PROPERTIES: readonly PortableProperty[] = [
 	{
 		key: "template-date-format",
-		owner: "Obsidian to quartz workspace",
+		owner: "Quartz Workspace Sync",
 		scope: "global",
 		defaultYaml: "DD.MM.YYYY",
 	},
 	{
 		key: "add-date-to-new-notes",
-		owner: "Obsidian to quartz workspace",
+		owner: "Quartz Workspace Sync",
 		scope: "global",
 		defaultYaml: "false",
 	},
 	{
 		key: "new-note-template",
-		owner: "Obsidian to quartz workspace",
+		owner: "Quartz Workspace Sync",
 		scope: "both",
 		defaultYaml: '""',
 	},
 	{
 		key: "prefix-new-dates",
-		owner: "Obsidian to quartz workspace",
+		owner: "Quartz Workspace Sync",
 		scope: "local",
 	},
 	{ key: "panel", owner: "Root Books appearance", scope: "local" },
