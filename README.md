@@ -1,6 +1,6 @@
-# Obsidian to quartz workspace
+# Quartz Workspace Sync
 
-Obsidian to quartz workspace brings together plugins built for one Obsidian and
+Quartz Workspace Sync brings together plugins built for one Obsidian and
 Quartz workflow. Most are still in active development, so behavior and settings
 may change quickly. Some plugins currently overlap in what they manage. The goal
 is for this plugin to become a coordinator that lists compatible plugins,
@@ -30,7 +30,7 @@ route files into managed tab groups or take over Obsidian's workspace layout.
 
 ## What it coordinates
 
-Obsidian to quartz workspace works with four independently installed community
+Quartz Workspace Sync works with four independently installed community
 plugins. Its settings dashboard audits each one separately and shows its
 installed version, enabled state, every watched setting, and the current and
 expected value. Green cards are ready, orange cards are installed but disabled,
@@ -178,15 +178,16 @@ never import their own creation or update timestamps.
 
 ## Installation
 
-The renamed plugin is installed locally in the thesis template vault while this
-version is being developed. After its release and registry update, install or
-update it through Obsidian's Community plugins screen. Manual installations
+The published Community plugins entry keeps the `root-books-workspace` ID, so
+existing installations can update normally. The GitHub repository remains
+`obsidian-to-quartz-workspace`. After its release, install or update the plugin
+through Obsidian's Community plugins screen. Manual installations
 need the three standard release assets:
 `main.js`, `manifest.json`, and `styles.css`. The default watch profile is
 compiled into `main.js`.
 
 ```text
-.obsidian/plugins/obsidian-to-quartz-workspace/
+.obsidian/plugins/root-books-workspace/
 ```
 
 Enable the plugin, review the coordinator dashboard, and install or configure
@@ -200,7 +201,7 @@ that fork.
 
 ## Portable contracts
 
-Obsidian to quartz workspace and
+Quartz Workspace Sync and
 [Root Books Workspace for Quartz](https://github.com/obsidian-material-plugins/quartz-root-books-workspace)
 implement `book-structure/v2` and `book-appearance/v2` from the
 [plugin contract catalog](https://github.com/obsidian-material-plugins/plugin-contracts).

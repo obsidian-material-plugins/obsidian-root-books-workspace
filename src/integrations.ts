@@ -607,7 +607,7 @@ function clickSettingsNavigation(app: App, label: string): boolean {
 	return true;
 }
 
-const TOOLKIT_SETTINGS_ID = "obsidian-to-quartz-workspace";
+const TOOLKIT_SETTINGS_ID = "root-books-workspace";
 const RETURN_SLIP_CLASS = "root-books-settings-return-slip";
 
 export function watchReturnAnchor(
@@ -700,10 +700,10 @@ async function installSettingsReturnSlip(
 	const slip = settingsDocument.body.createEl("button");
 	slip.type = "button";
 	slip.className = RETURN_SLIP_CLASS;
-	slip.textContent = "← Return to Obsidian to quartz workspace";
+	slip.textContent = "← Return to Quartz Workspace Sync";
 	slip.setAttribute(
 		"aria-label",
-		"Return to the same watched item in Obsidian to quartz workspace",
+		"Return to the same watched item in Quartz Workspace Sync",
 	);
 	const view = settingsDocument.defaultView;
 	let intervalId: number | undefined;

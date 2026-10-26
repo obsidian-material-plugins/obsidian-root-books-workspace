@@ -1,6 +1,6 @@
 # Architecture
 
-Obsidian to quartz workspace is an orchestration layer rather than a second
+Quartz Workspace Sync is an orchestration layer rather than a second
 implementation of its companion plugins.
 
 - `main.ts` owns lifecycle only.

@@ -6,7 +6,7 @@ applyTo: "{src,tests}/**,manifest.json,package.json,styles.css"
 
 # Product architecture
 
-Obsidian to quartz workspace coordinates four independently installed plugins:
+Quartz Workspace Sync coordinates four independently installed plugins:
 
 - Folder Notes (`folder-notes`)
 - Custom File Explorer Sorting (`custom-sort`)

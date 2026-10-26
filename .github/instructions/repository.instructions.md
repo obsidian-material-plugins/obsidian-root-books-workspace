@@ -6,7 +6,9 @@ applyTo: "**"
 
 # Repository boundaries
 
-- Obsidian to quartz workspace is an Obsidian community plugin. Source lives in `src/`.
+- Quartz Workspace Sync is an Obsidian community plugin. Source lives in `src/`.
+- Keep the published manifest ID `root-books-workspace`; the repository and
+  package name `obsidian-to-quartz-workspace` do not need to match it.
 - Keep `src/main.ts` limited to lifecycle and orchestration.
 - Keep human documentation in `README.md` and `CHANGELOG.md`. Agent-only
   material belongs in `AGENTS.md` or `.github/`.
@@ -28,6 +30,6 @@ applyTo: "**"
   Do not add other compatibility behavior without a concrete need.
 - Use the canonical thesis template vault for local plugin development and
   direct build installation only. Treat the thesis fork as the release
-  consumer: update Obsidian to quartz workspace there only through Obsidian's official
+  consumer: update Quartz Workspace Sync there only through Obsidian's official
   Community plugins update action. Never copy local development artifacts into
   the fork when validating a release.

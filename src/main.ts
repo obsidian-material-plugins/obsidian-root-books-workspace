@@ -286,8 +286,8 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		const remainder = problems.length - 3;
 		new Notice(
 			live
-				? `Obsidian to quartz workspace detected a watched-state change: ${names}${remainder > 0 ? ` and ${remainder} more` : ""} ${problems.length === 1 ? "needs" : "need"} attention. Open its settings for details.`
-				: `Obsidian to quartz workspace found ${problems.length} watched target${problems.length === 1 ? "" : "s"} needing attention: ${names}${remainder > 0 ? ` and ${remainder} more` : ""}. Open its settings for details.`,
+				? `Quartz Workspace Sync detected a watched-state change: ${names}${remainder > 0 ? ` and ${remainder} more` : ""} ${problems.length === 1 ? "needs" : "need"} attention. Open its settings for details.`
+				: `Quartz Workspace Sync found ${problems.length} watched target${problems.length === 1 ? "" : "s"} needing attention: ${names}${remainder > 0 ? ` and ${remainder} more` : ""}. Open its settings for details.`,
 			10000,
 		);
 	}
@@ -338,20 +338,20 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 	private async loadSettings(): Promise<void> {
 		let stored =
 			(await this.loadData()) as Partial<RootBooksWorkspaceSettings> | null;
-		let migratedLegacyData = false;
+		let migratedPreviewData = false;
 		if (!stored) {
 			const previousPath = normalizePath(
-				`${this.app.vault.configDir}/plugins/root-books-workspace/data.json`,
+				`${this.app.vault.configDir}/plugins/obsidian-to-quartz-workspace/data.json`,
 			);
 			if (await this.app.vault.adapter.exists(previousPath)) {
 				try {
 					stored = JSON.parse(
 						await this.app.vault.adapter.read(previousPath),
 					) as Partial<RootBooksWorkspaceSettings>;
-					migratedLegacyData = true;
+					migratedPreviewData = true;
 				} catch {
 					new Notice(
-						"The former plugin settings could not be read; default settings will be used.",
+						"The preview plugin settings could not be read; default settings will be used.",
 					);
 				}
 			}
@@ -413,7 +413,7 @@ export default class RootBooksWorkspacePlugin extends Plugin {
 		this.watchTargets = profile.profile.targets;
 		this.watchProfileHasOverride = profile.hasOverride;
 		this.watchProfileLoadError = profile.error ?? null;
-		if (migratedLegacyData) await this.saveSettings();
+		if (migratedPreviewData) await this.saveSettings();
 	}
 
 	onunload(): void {
