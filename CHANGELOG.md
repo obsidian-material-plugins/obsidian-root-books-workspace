@@ -7,6 +7,8 @@
   `root-books-workspace` manifest ID or Quartz Workspace Sync display name.
 - Require Community Directory repository mapping coordination before any future
   GitHub rename or transfer so automated reviews do not depend on redirects.
+- Replace `!important` stylesheet overrides with narrowly scoped selectors for
+  invalid filename inputs, remove buttons, tabs, and File Explorer folders.
 
 ## 0.15.1
 
