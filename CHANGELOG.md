@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.15.2
 
 - Restore the canonical repository and package name
   `obsidian-root-books-workspace` without changing the published
