@@ -14,6 +14,7 @@ const manifest = JSON.parse(
 const packageJson = JSON.parse(
 	readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 ) as { version: string };
+const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
 
 test("keeps the published Obsidian identity and a releasable manifest", () => {
 	assert.equal(manifest.id, "root-books-workspace");
@@ -24,4 +25,8 @@ test("keeps the published Obsidian identity and a releasable manifest", () => {
 	assert.equal(manifest.author, "Material Plugins");
 	assert.doesNotMatch(manifest.description, /obsidian/i);
 	assert.equal(manifest.version, packageJson.version);
+});
+
+test("keeps release styles compatible with Community Directory review", () => {
+	assert.doesNotMatch(styles, /!important\b/);
 });

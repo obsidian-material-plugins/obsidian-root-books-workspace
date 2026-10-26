@@ -80,8 +80,10 @@
 	text-align: right;
 }
 
-.root-books-filename-invalid {
-	border-color: var(--text-error) !important;
+.root-books-note-conventions
+	.setting-item-control
+	input.root-books-filename-invalid {
+	border-color: var(--text-error);
 	box-shadow: 0 0 0 1px var(--text-error);
 }
 
@@ -155,11 +157,16 @@
 	justify-content: flex-end;
 }
 
-.root-books-remove-button {
-	border-color: transparent !important;
-	background: transparent !important;
-	box-shadow: none !important;
-	color: var(--text-error) !important;
+.root-books-watch-editor
+	.root-books-card-heading
+	button.root-books-remove-button,
+.root-books-integration-card
+	.root-books-watch-actions
+	button.root-books-remove-button {
+	border-color: transparent;
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-error);
 }
 
 .root-books-watch-editor {
@@ -289,9 +296,13 @@
 	box-shadow: inset 0 -2px var(--root-books-accent);
 }
 
-.workspace-tab-header.root-books-tab .workspace-tab-header-inner-title,
-.workspace-tab-header.root-books-tab .root-books-tab-icon {
-	color: var(--root-books-accent) !important;
+.workspace-tabs
+	.workspace-tab-header.root-books-tab[data-root-book]
+	.workspace-tab-header-inner-title,
+.workspace-tabs
+	.workspace-tab-header.root-books-tab[data-root-book]
+	.root-books-tab-icon {
+	color: var(--root-books-accent);
 }
 
 .root-books-tab-icon {
@@ -299,10 +310,15 @@
 	cursor: pointer;
 }
 
-.nav-folder-title.root-books-folder,
-.nav-folder-title.root-books-folder .nav-folder-title-content,
-.nav-folder-title.root-books-folder .root-books-folder-icon {
-	color: var(--root-books-accent) !important;
+.workspace-leaf-content[data-type="file-explorer"]
+	.nav-folder-title.root-books-folder,
+.workspace-leaf-content[data-type="file-explorer"]
+	.nav-folder-title.root-books-folder
+	.nav-folder-title-content,
+.workspace-leaf-content[data-type="file-explorer"]
+	.nav-folder-title.root-books-folder
+	.root-books-folder-icon {
+	color: var(--root-books-accent);
 }
 
 .root-books-folder-icon {
