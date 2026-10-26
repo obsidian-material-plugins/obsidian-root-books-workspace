@@ -207,7 +207,7 @@ implement `book-structure/v2` and `book-appearance/v2` from the
 [plugin contract catalog](https://github.com/obsidian-material-plugins/plugin-contracts).
 Their package releases are independent. Compatibility follows the declared
 contract versions rather than matching package versions.
-For this unreleased Obsidian build, use Quartz Root Books source at or after
+For the current Obsidian release, use Quartz Root Books source at or after
 `eb21950` for the v2 appearance reader and filename staging adapter. The
 released Quartz `0.14.1` package does not include them yet.
 

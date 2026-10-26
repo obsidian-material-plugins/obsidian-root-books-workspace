@@ -1,6 +1,6 @@
 {
   "name": "obsidian-to-quartz-workspace",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Obsidian coordinator for portable frontmatter settings, plugin watches, and Quartz workflows.",
   "main": "main.js",
   "type": "module",
